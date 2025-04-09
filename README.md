@@ -1,13 +1,14 @@
 # MicroDbal Library
 
-MicroDbal is a lightweight database abstraction library built on top of PHP's PDO. 
-It aims to simplify common database operations with a simple API of most common features.
-The underlying PDO instance is directly accessible if needed for use cases not covered by the library.
+MicroDbal is a lightweight database abstraction library built on top of PHP's PDO.  
+It simplifies common database operations with a straightforward API that focuses on the most commonly used features, ensuring security by exclusively using prepared statements.  
+For advanced use cases not covered by the library, the underlying PDO instance remains directly accessible.
+This library follows the best practices outlined at [PHP Delusions](https://phpdelusions.net/pdo).
 
 ## Features
 - Simplified database operations (fetching rows, executing queries, transactions, etc.)
 - Lightweight and easy to integrate
-- Helper methods for SQL `IN` clauses, `LIKE` clauses, and escaping
+- Helper methods for SQL `IN` clauses and `LIKE` clauses
 - Let use the underlying PDO instance directly if ever needed
 
 ## Tested with those Databases
@@ -55,9 +56,20 @@ To run tests using PHPUnit:
    ```bash
    composer install
    ```
-2. Run PHPUnit:
+
+2. Run tests on SQLite (default to memory DB if no DSN provided) :
    ```bash
-   vendor/bin/phpunit
+   php run-tests.php
+   ```
+
+3. Run tests on any database connection :
+   ```bash
+   php run-tests.php <dsn> <username> <password>
+   ```
+
+   Example
+   ```bash
+   php run-tests.php "pgsql:dbname=postgres;host=localhost" "user" "password"
    ```
 
 ## Status

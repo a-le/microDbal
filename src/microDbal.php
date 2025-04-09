@@ -201,7 +201,7 @@ class MicroDbal
      * @throws PDOException — If there is already a transaction started or the driver does not support transactions
      * @link https://php.net/manual/en/pdo.begintransaction.php
      */
-    public function beginTrans(): bool
+    public function beginTransaction(): bool
     {
         return $this->pdo->beginTransaction();
     }
@@ -212,7 +212,7 @@ class MicroDbal
      * @throws PDOException — if there is no active transaction.
      * @link https://php.net/manual/en/pdo.commit.php
      */
-    public function commitTrans(): bool
+    public function commit(): bool
     {
         return $this->pdo->commit();
     }
@@ -223,7 +223,7 @@ class MicroDbal
      * @throws PDOException — if there is no active transaction.
      * @link https://php.net/manual/en/pdo.rollback.php
      */
-    public function rollBackTrans(): bool
+    public function rollBack(): bool
     {
         return $this->pdo->rollBack();
     }
@@ -233,46 +233,40 @@ class MicroDbal
      * @return bool — TRUE if a transaction is currently active, FALSE otherwise.
      * @link https://php.net/manual/en/pdo.intransaction.php
     */
-    public function inTrans(): bool
+    public function inTransaction(): bool
     {
         return $this->pdo->inTransaction();
     }
 
     /**
-     * Generates a SQL IN clause for integer values.
-     * This method is useful when you want to create a SQL IN clause with a list of integer values.
-     * @param array $arr 
-     * @return string 
-     */
-    public function sqlInInt(array $arr): string
-    {
-        if (!count($arr)) return '(SELECT 1 WHERE FALSE)';
-        return '(' . implode(',', array_map('intval', $arr)) . ')';
-    }
-
-    /**
-     * Generates a SQL IN clause for string values.
-     * This method is useful when you want to create a SQL IN clause with a list of string values.
-     * @param array $arr 
-     * @return string 
-     */
-    public function sqlInStr(array $arr): string
-    {
-        if (!count($arr)) return '(SELECT \'\' WHERE FALSE)';
-        return '(' . implode(',', array_map(array(&$this->pdo, 'quote'), $arr)) . ')';
-    }
-
-    /**
-     * Generates a SQL LIKE clause with escaped characters.
-     * This method is useful when you want to create a SQL LIKE clause composed of unsafe string.
-     * @param $str
-     * @param string $escape
+     * Generates a SQL IN clause using placeholders.
+     * @param array $arr
      * @return string
+     */
+    public function sqlIn(array $arr): string
+    {
+        if ($arr === []) {
+            return '(null)';
+        }
+        $placeholders = implode(',', array_fill(0, count($arr), '?'));
+        return "($placeholders)";
+    }
+
+    /**
+     * Prepares a SQL LIKE clause value with escaped characters for use in a prepared statement.
+     * This method escapes `%` and `_` characters in the input string and appends the necessary wildcards.
+     * @param string $str The input string to escape.
+     * @param string $escape The escape character (default is '\').
+     * @return string The escaped string ready for a LIKE clause.
      */
     public function sqlLikeEscape(string $str, string $escape = '\\'): string
     {
-        $quoted = trim($this->pdo->quote($str), "'");
-        $chars = array('%' => $escape . '%', '_' => $escape . '_');
-        return  strtr($quoted, $chars);
+        // Escape special characters for SQL LIKE
+        $escaped = strtr($str, [
+            '%' => $escape . '%',
+            '_' => $escape . '_',
+        ]);
+
+        return $escaped;
     }
 }

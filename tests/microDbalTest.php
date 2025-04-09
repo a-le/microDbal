@@ -131,33 +131,33 @@ class microDbalTest extends TestCase
     public function testTransMethods(): void
     {
         // Test inTrans before starting a transaction
-        $this->assertFalse($this->db->inTrans(), 'Expected not to be in a transaction initially.');
+        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction initially.');
 
         // Begin transaction
-        $this->db->beginTrans();
-        $this->assertTrue($this->db->inTrans(), 'Expected to be in a transaction after beginTrans.');
+        $this->db->beginTransaction();
+        $this->assertTrue($this->db->inTransaction(), 'Expected to be in a transaction after beginTransaction.');
 
         // Insert a new row
         $this->db->run('INSERT INTO test (id, name, age) VALUES (?, ?, ?)', [3, 'Charlie', 25]);
 
         // Roll back the transaction
-        $this->db->rollBackTrans();
-        $this->assertFalse($this->db->inTrans(), 'Expected not to be in a transaction after rollBackTrans.');
+        $this->db->rollBack();
+        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after rollBack.');
 
         // Verify the row was not committed
         $result = $this->db->get('SELECT * FROM test WHERE id = ?', [3]);
         $this->assertFalse($result, 'Expected no row to be found after rollback.');
 
         // Begin another transaction
-        $this->db->beginTrans();
-        $this->assertTrue($this->db->inTrans(), 'Expected to be in a transaction after beginTrans.');
+        $this->db->beginTransaction();
+        $this->assertTrue($this->db->inTransaction(), 'Expected to be in a transaction after beginTransaction.');
 
         // Insert a new row
         $this->db->run('INSERT INTO test (id, name, age) VALUES (?, ?, ?)', [4, 'Diana', 28]);
 
         // Commit the transaction
-        $this->db->commitTrans();
-        $this->assertFalse($this->db->inTrans(), 'Expected not to be in a transaction after commitTrans.');
+        $this->db->commit();
+        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after commit.');
 
         // Verify the row was committed
         $result = $this->db->get('SELECT * FROM test WHERE id = ?', [4]);
@@ -172,53 +172,42 @@ class microDbalTest extends TestCase
         $this->assertEquals(1, $rowCount, 'Expected row count to be 1 after a single insert.');
     }
 
-    public function testSqlInInt(): void
+    public function testSqlIn(): void
     {
         // Case 1: Non-empty array of integers
-        $sqlFragment = $this->db->sqlInInt([1, 2]);
-        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment");
+        $params = [1, 2];
+        $sqlFragment = $this->db->sqlIn($params);
+        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment", $params);
         $this->assertCount(2, $result, 'Expected 2 rows to match the integer IN clause.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30], ['id' => 2, 'name' => 'Bob', 'age' => 40]], $result);
 
         // Case 2: Empty array
-        $sqlFragment = $this->db->sqlInInt([]);
-        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment");
+        $params = [];
+        $sqlFragment = $this->db->sqlIn($params);
+        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment", $params);
         $this->assertEquals([], $result, 'Expected no rows to match the empty integer IN clause.');
 
-        // Case 3: Single integer
-        $sqlFragment = $this->db->sqlInInt([1]);
-        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment");
+        // Case 3: Empty array
+        $params = []; 
+        $sqlFragment = $this->db->sqlIn($params);
+        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment", $params);
+        $this->assertEquals([], $result, 'Expected no rows to match the empty string IN clause.');
+
+        // Case 4: Single integer
+        $params = [1];
+        $sqlFragment = $this->db->sqlIn($params);
+        $result = $this->db->getAll("SELECT * FROM test WHERE id IN $sqlFragment", $params);
         $this->assertCount(1, $result, 'Expected 1 row to match the single integer IN clause.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30]], $result);
-    }
 
-    public function testSqlInStr(): void
-    {
-        // Case 1: Non-empty array of strings
-        $sqlFragment = $this->db->sqlInStr(['Alice', 'Bob']);
-        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment");
+        // Case 5: Non-empty array of strings
+        $params = ['Alice', 'Bob']; 
+        $sqlFragment = $this->db->sqlIn($params);
+        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment", $params);
         $this->assertCount(2, $result, 'Expected 2 rows to match the string IN clause.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30], ['id' => 2, 'name' => 'Bob', 'age' => 40]], $result);
 
-        // Case 2: Empty array
-        $sqlFragment = $this->db->sqlInStr([]);
-        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment");
-        $this->assertEquals([], $result, 'Expected no rows to match the empty string IN clause.');
-
-        // Case 3: Single string
-        $sqlFragment = $this->db->sqlInStr(['Alice']);
-        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment");
-        $this->assertCount(1, $result, 'Expected 1 row to match the single string IN clause.');
-        $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30]], $result);
-
-        // Case 4: Special characters
-        $this->db->run('INSERT INTO test (id, name, age) VALUES (?, ?, ?)', [3, "O'Reilly", 35]);
-        $sqlFragment = $this->db->sqlInStr(["O'Reilly"]);
-        $result = $this->db->getAll("SELECT * FROM test WHERE name IN $sqlFragment");
-        $this->assertCount(1, $result, 'Expected 1 row to match the string IN clause with special characters.');
-        $this->assertEquals([['id' => 3, 'name' => "O'Reilly", 'age' => 35]], $result);
     }
-
 
     public function testsqlLikeEscape(): void
     {
