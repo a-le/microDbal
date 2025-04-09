@@ -1,0 +1,17 @@
+{
+    "name": "a-le/microdbal",
+    "description": "A simple yet efficient DBAL for PHP, built on top of PDO. It provides a lightweight and easy-to-use interface for database operations.",
+    "keywords": ["pdo", "dbal", "database", "php"],
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "aLe\\": "src/"
+        }
+    },
+    "minimum-stability": "beta",
+    "require": {"php": ">=8.2"},
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    }
+}
