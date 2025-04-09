@@ -17,6 +17,7 @@ The underlying PDO instance is directly accessible if needed for use cases not c
 - [ ] Firebird
 - [ ] ClickHouse
 - [ ] DuckDB
+
 Note that it should supports any databases that PHP PDO supports.
 
 ## Installation
