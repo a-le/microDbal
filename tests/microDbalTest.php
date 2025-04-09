@@ -24,7 +24,7 @@ class microDbalTest extends TestCase
     public function testGet(): void
     {
         // Query returns a result
-        $result = $this->db->get('SELECT * FROM test WHERE name = ?', ['Alice']);
+        $result = $this->db->get('SELECT * FROM test WHERE name = :name', ['name' => 'Alice']);
         $this->assertEquals(['id' => 1, 'name' => 'Alice', 'age' => 30], $result);
 
         // Query does not return a result
@@ -99,33 +99,33 @@ class microDbalTest extends TestCase
     public function testGetOneObject(): void
     {
         // Query returns a result
-        $result = $this->db->getOneObject('SELECT * FROM test WHERE name = ?', Person::class, ['Alice']);
+        $result = $this->db->getOneObject('SELECT * FROM test WHERE name = ?', ['Alice'], Person::class);
         $this->assertInstanceOf(Person::class, $result);
         $this->assertEquals('Alice', $result->name);
 
         // Query does not return a result
-        $result = $this->db->getOneObject('SELECT * FROM test WHERE name = ?', Person::class, ['Charlie']);
+        $result = $this->db->getOneObject('SELECT * FROM test WHERE name = ?', ['Charlie'], Person::class);
         $this->assertFalse($result);
 
         // Query is bogus
         $this->expectException(PDOException::class);
-        $this->db->getOneObject('SELECT * FROM non_existing_table', Person::class);
+        $this->db->getOneObject('SELECT * FROM non_existing_table', [], Person::class);
     }
 
     public function testGetAllObjects(): void
     {
         // Query returns results
-        $result = $this->db->getAllObjects('SELECT * FROM test', Person::class);
+        $result = $this->db->getAllObjects('SELECT * FROM test', [], Person::class);
         $this->assertCount(2, $result);
         $this->assertInstanceOf(Person::class, $result[0]);
 
         // Query does not return results
-        $result = $this->db->getAllObjects('SELECT * FROM test WHERE age > ?', Person::class, [100]);
+        $result = $this->db->getAllObjects('SELECT * FROM test WHERE age > ?', [100], Person::class);
         $this->assertEquals([], $result);
 
         // Query is bogus
         $this->expectException(PDOException::class);
-        $this->db->getAllObjects('SELECT * FROM non_existing_table', Person::class);
+        $this->db->getAllObjects('SELECT * FROM non_existing_table', [], Person::class);
     }
 
     public function testTransMethods(): void

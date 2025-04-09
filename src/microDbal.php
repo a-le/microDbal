@@ -140,13 +140,13 @@ class MicroDbal
      * Fetch the next row of the result set as an object of the specified class.
      * If no rows are found, false is returned.
      * @param string $sql 
-     * @param string $className 
      * @param array $args 
+     * @param string $className 
      * @param array $constructorArgs 
      * @return mixed|false 
      * @throws PDOException 
      */
-    public function getOneObject(string $sql, string $className, array $args = [], array $constructorArgs = []): mixed
+    public function getOneObject(string $sql, array $args, string $className, array $constructorArgs = []): mixed
     {
         $stmt = $this->run($sql, $args);
         $stmt->setFetchMode(PDO::FETCH_CLASS, $className, $constructorArgs);
@@ -157,13 +157,13 @@ class MicroDbal
      * Fetch all rows of the result set as objects of the specified class.
      * If no rows are found, an empty array is returned.
      * @param string $sql 
-     * @param string $className 
      * @param array $args 
+     * @param string $className 
      * @param array $constructorArgs 
      * @return array 
      * @throws PDOException 
      */
-    public function getAllObjects(string $sql, string $className, array $args = [], array $constructorArgs = []): array
+    public function getAllObjects(string $sql, array $args, string $className, array $constructorArgs = []): array
     {
         $stmt = $this->run($sql, $args);
         return $stmt->fetchAll(PDO::FETCH_CLASS, $className, $constructorArgs);
