@@ -6,7 +6,6 @@ The underlying PDO instance is directly accessible if needed for use cases not c
 
 ## Features
 - Simplified database operations (fetching rows, executing queries, transactions, etc.)
-- Supports any databases that PHP PDO supports
 - Lightweight and easy to integrate
 - Helper methods for SQL `IN` clauses, `LIKE` clauses, and escaping
 - Let use the underlying PDO instance directly if ever needed
@@ -18,6 +17,7 @@ The underlying PDO instance is directly accessible if needed for use cases not c
 - [ ] Firebird
 - [ ] ClickHouse
 - [ ] DuckDB
+Note that it should supports any databases that PHP PDO supports.
 
 ## Installation
 Install via Composer:
