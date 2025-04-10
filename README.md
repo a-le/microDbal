@@ -13,15 +13,13 @@ This library follows the best practices outlined at [PHP Delusions](https://phpd
 - Let use the underlying PDO instance directly if ever needed
 
 ## Tested with those Databases
-- [ ] ClickHouse
 - [ ] DuckDB
 - [x] Firebird
 - [x] MySQL / MariaDB
 - [x] MS SQL Server
 - [x] PostgreSQL
 - [x] SQLite
-
-Note that it should supports any databases that PHP PDO supports.
+- [x] supports all databases that are compatible with PHP's PDO.
 
 ## Installation
 Install via Composer:
