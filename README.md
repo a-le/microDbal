@@ -13,12 +13,13 @@ This library follows the best practices outlined at [PHP Delusions](https://phpd
 - Let use the underlying PDO instance directly if ever needed
 
 ## Tested with those Databases
-- [x] SQLite
-- [x] PostgreSQL
-- [ ] MySQL/MariaDB
-- [ ] Firebird
 - [ ] ClickHouse
 - [ ] DuckDB
+- [x] Firebird
+- [x] MySQL / MariaDB
+- [x] MS SQL Server
+- [x] PostgreSQL
+- [x] SQLite
 
 Note that it should supports any databases that PHP PDO supports.
 
@@ -34,8 +35,7 @@ Here’s a list of all methods provided by the `MicroDbal` class, along with exa
 - `__construct(string $dsn, ?string $username = null, ?string $password = null, array $options = [])`  
   **Example:**
   ```php
-  $db = new MicroDbal('sqlite::memory:'); 
-  $db = new MicroDbal('pgsql:dbname=postgres;host=localhost', $username, $password);
+  $db = new MicroDbal('sqlite::memory:');
   ```
 
 - `run(string $sql, array $args = []): PDOStatement|false`  

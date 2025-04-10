@@ -17,12 +17,18 @@ class MicroDbal
     public $pdo;
 
     /**
+     * @var string The name of the database driver being used.
+     */
+    public readonly string $driverName;
+
+    /**
      * @var int The number of rows affected by the last SQL statement.
      */
     private int $stmtRowCount = 0;
 
     /**
      * Creates a new instance of the MicroDbal class.
+     * @link https://www.php.net/manual/en/pdo.construct.php
      * @param string $dsn 
      * @param string|null $username 
      * @param string|null $password 
@@ -33,11 +39,12 @@ class MicroDbal
     {
         $default_options = [
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Error reporting, let PDO throw an exception
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Error reporting, let PDO throw an exception
         ];
         $options = array_replace($default_options, $options);
         $this->pdo = new PDO($dsn, $username, $password, $options);
+        $this->driverName = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
     /**
@@ -187,7 +194,8 @@ class MicroDbal
     /**
      * Returns the number of rows affected by the last executed statement using methods of this library.
      * This method is useful when you want to know how many rows were affected by an UPDATE, DELETE, or INSERT statement.
-     * $this->stmtRowCount is set with pdostatement.rowcount in the run method
+     * The PDOStatement::rowCount() is called in the run method, and the value is stored in the $stmtRowCount property.
+     * @see https://www.php.net/manual/en/pdostatement.rowcount.php for more information
      * @return int 
      */
     public function getRowCount(): int
@@ -232,7 +240,7 @@ class MicroDbal
      * inTransaction Helper
      * @return bool — TRUE if a transaction is currently active, FALSE otherwise.
      * @link https://php.net/manual/en/pdo.intransaction.php
-    */
+     */
     public function inTransaction(): bool
     {
         return $this->pdo->inTransaction();
@@ -269,4 +277,5 @@ class MicroDbal
 
         return $escaped;
     }
+
 }
