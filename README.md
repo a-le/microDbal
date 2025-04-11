@@ -1,16 +1,26 @@
 # MicroDbal Library
 
-MicroDbal is a lightweight database abstraction library built on top of PHP's PDO.  
-The API focuses on the most common database operations, ensuring security by exclusively using prepared statements. 
-For advanced use cases not covered by the library, the underlying PDO instance remains directly accessible.
-This library follows the best practices outlined at [PHP Delusions](https://phpdelusions.net/pdo).
+MicroDbal is a lightweight database abstraction library built on top of PHP's PDO.
+
+Ease of use:
+- Focuses on the most commonly used PDOStatement fetch modes.
+- Regroups most common PDO and PDOStatement methods into the same class.
+
+Safe:
+- Uses prepared statements to prevent SQL injection and follows the best practices outlined at [PHP Delusions](https://phpdelusions.net/pdo).
+
+Powerful:
+- For advanced use cases not covered by the library, the underlying PDO and PDOStatement instances remain directly accessible.
+
+Light:
+- Does not include ORM or query-building functionalities.
+
 
 ## Features
-- Simple API for common database operations
-- Lightweight and easy to integrate
-- Queries can uses named placeholders (:name) or positional placeholders (?)
+- Can run a SQL query and get the result with only 1 line of code
+- SQL query can uses named placeholders (:name) or positional placeholders (?)
 - Helper methods for SQL `IN` clauses and `LIKE` clauses
-- Let use the underlying PDO instance directly if ever needed
+- Let use the underlying PDO and PDOStatement instances directly if ever needed
 
 ## Tested with those Databases
 - [ ] DuckDB
@@ -39,14 +49,9 @@ Here’s a list of all methods provided by the `MicroDbal` class, along with exa
 - `run(string $sql, array $args = []): PDOStatement|false`  
   **Example:**
   ```php
-  $db->run('INSERT INTO users (name, age) VALUES (:name, :age)', ['name' => 'Alice', 'age' => 30]); // named placeholders
-  $db->run('INSERT INTO users (name, age) VALUES (?, ?)', ['Alice', 30]); // positional placeholders
-  ```
-
-- `get(string $sql, array $args = []): array|false`  
-  **Example:**
-  ```php
-  $user = $db->get('SELECT * FROM users WHERE id = :id', ['id' => 1]);
+  $db->run('INSERT INTO users (name, age) VALUES (:name, :age)', ['name' => 'Alice', 'age' => 30]); // with named placeholders
+  $db->run('INSERT INTO users (name, age) VALUES (?, ?)', ['Alice', 30]); // same query with positional placeholders
+  $db->run('INSERT INTO users (name, age) VALUES (?, ?)', ['Alice', 30], $rowCount); // pass a 3rd argument to get affected rows
   ```
 
 - `getAll(string $sql, array $args = []): array`  
@@ -86,7 +91,6 @@ Here’s a list of all methods provided by the `MicroDbal` class, along with exa
   ```
 
 - `getLastInsertedId(?string $name = null): string|false`  
-- `getRowCount(): int`  
 - `beginTrans(): bool`  
 - `commitTrans(): bool`  
 - `rollBackTrans(): bool`  

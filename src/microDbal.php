@@ -22,11 +22,6 @@ class MicroDbal
     public readonly string $driverName;
 
     /**
-     * @var int The number of rows affected by the last SQL statement.
-     */
-    private int $stmtRowCount = 0;
-
-    /**
      * Creates a new instance of the MicroDbal class.
      * @link https://www.php.net/manual/en/pdo.construct.php
      * @param string $dsn 
@@ -40,70 +35,81 @@ class MicroDbal
         $default_options = [
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Error reporting, let PDO throw an exception
         ];
-        $options = array_replace($default_options, $options);
+        $forced_options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // let PDO throw exception on error
+        ];
+        $options = array_replace($default_options, $options, $forced_options);
         $this->pdo = new PDO($dsn, $username, $password, $options);
         $this->driverName = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
     /**
      * Prepares and executes a SQL statement with the given arguments. 
+     * This method is useful for executing SQL statements that do not return a result set, such as INSERT, UPDATE, or DELETE.
+     * Or if you want to access the statement object directly.
      * Returns the statement object.
      * @param string $sql 
      * @param array $args 
-     * @return PDOStatement|false 
+     * @param int|null $rowCount Optional reference to store the number of affected rows.
+     * @return PDOStatement
      * @throws PDOException 
      */
-    public function run(string $sql, array $args = []): PDOStatement|false
+    public function run(string $sql, array $args = [], ?int &$rowCount = null): PDOStatement|false
     {
         $stmt = $this->pdo->prepare($sql);
-        if ($stmt === false) {
-            return false;
-        }
         $stmt->execute($args);
-        $this->stmtRowCount = $stmt->rowCount();
+
+        if (func_num_args() > 2) {
+            $rowCount = $stmt->rowCount();
+        }
+
         return $stmt;
     }
 
-    /**
-     * Fetch next row from the result set as an associative array.
-     * @param string $sql 
-     * @param array $args 
-     * @return array|false 
-     * @throws PDOException 
-     */
-    public function get(string $sql, array $args = []): array|false
-    {
-        $stmt = $this->run($sql, $args);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
 
     /**
      * Returns all rows of the result set as an associative array.
      * @param string $sql 
      * @param array $args 
+     * @param array|null $columnsMeta Optional reference to store column metadata.
      * @return array 
      * @throws PDOException 
      */
-    public function getAll(string $sql, array $args = []): array
+    public function getAll(string $sql, array $args = [], ?array &$columnsMeta = null): array
     {
-        return $this->run($sql, $args)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->run($sql, $args);
+
+        if (func_num_args() > 2) {
+            $columnsMeta = [];
+            for ($i = 0; $i < $stmt->columnCount(); $i++) {
+                $columnsMeta[$i] = $stmt->getColumnMeta($i);
+            }
+        }
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
      * Returns the next row of the result set as an associative array.
-     * This method is useful when you want to retrieve a single row.
-     * It prepares and executes the SQL statement, fetches the first row, and closes the cursor.
+     * This method is useful when you know your query returns at most 1 row.
      * If no rows are found, an empty array is returned.
      * @param string $sql 
      * @param array $args 
      * @return array 
      * @throws PDOException 
      */
-    public function getRow(string $sql, array $args = []): array
+    public function getRow(string $sql, array $args = [], ?array &$columnsMeta = null): array
     {
         $stmt = $this->run($sql, $args);
+
+        if (isset($columnsMeta)) {
+            $columnsMeta = [];
+            for ($i = 0; $i < $stmt->columnCount(); $i++) {
+                $columnsMeta[$i] = $stmt->getColumnMeta($i);
+            }
+        }
+
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         $stmt->closeCursor();
         return $r === false ? [] : $r;
@@ -111,8 +117,7 @@ class MicroDbal
 
     /**
      * Returns the first column of the result set as an array.
-     * This method is useful when you want to retrieve a single column.
-     * It prepares and executes the SQL statement, fetches all values from the first column, and closes the cursor.
+     * This method is useful when your query returns rows for only 1 column.
      * If no rows are found, an empty array is returned.
      * @param string $sql 
      * @param array $args 
@@ -127,8 +132,7 @@ class MicroDbal
 
     /**
      * Returns the first value of the next row of the result set.
-     * This method is useful when you want to retrieve a single value.
-     * It prepares and executes the SQL statement, fetches the value, and closes the cursor.
+     * This method is useful when your query returns a single value.
      * If no rows are found, false is returned.
      * @param string $sql 
      * @param array $args 
@@ -145,6 +149,7 @@ class MicroDbal
 
     /**
      * Fetch the next row of the result set as an object of the specified class.
+     * This method is useful when you want to retrieve a single object from the first row.
      * If no rows are found, false is returned.
      * @param string $sql 
      * @param array $args 
@@ -157,7 +162,9 @@ class MicroDbal
     {
         $stmt = $this->run($sql, $args);
         $stmt->setFetchMode(PDO::FETCH_CLASS, $className, $constructorArgs);
-        return $stmt->fetch();
+        $r = $stmt->fetch();
+        $stmt->closeCursor();
+        return $r;
     }
 
     /**
@@ -198,10 +205,10 @@ class MicroDbal
      * @see https://www.php.net/manual/en/pdostatement.rowcount.php for more information
      * @return int 
      */
-    public function getRowCount(): int
-    {
-        return $this->stmtRowCount;
-    }
+    // public function getLastRowCount(): int
+    // {
+    //     return $this->lastRowCount;
+    // }
 
     /** 
      * beginTransaction Helper

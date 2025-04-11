@@ -52,7 +52,7 @@ class microDbalTest extends TestCase
         try {
             // get the last inserted ID
             $lastId = $this->db->getLastInsertedId();
-            $this->assertEquals(2, (int)$lastId, 'Expected last inserted ID to be 2.');
+            $this->assertEquals(2, (int) $lastId, 'Expected last inserted ID to be 2.');
         } catch (PDOException $e) {
             // Handle the exception if the driver does not support lastInsertId
             $this->assertEquals('IM001', $e->getCode(), 'Expected SQLSTATE[IM001] for unsupported driver.');
@@ -60,26 +60,12 @@ class microDbalTest extends TestCase
 
     }
 
-    public function testGet(): void
-    {
-        // Query returns a result
-        $result = $this->db->get('SELECT * FROM "temp_table" WHERE "name" = :name', ['name' => 'Alice']);
-        $this->assertEquals(['id' => 1, 'name' => 'Alice', 'age' => 30], $result);
-
-        // Query does not return a result
-        $result = $this->db->get('SELECT * FROM "temp_table" WHERE "name" = ?', ['Charlie']);
-        $this->assertFalse($result);
-
-        // Query is bogus
-        $this->expectException(PDOException::class);
-        $this->db->get('SELECT * FROM NON_EXISTING_TABLE');
-    }
-
     public function testGetAll(): void
     {
         // Query returns results
-        $result = $this->db->getAll('SELECT * FROM "temp_table"');
+        $result = $this->db->getAll('SELECT * FROM "temp_table"', [], $columnsMeta);
         $this->assertCount(2, $result);
+        $this->assertCount(3, $columnsMeta);
 
         // Query does not return results
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "age" > ?', [100]);
@@ -184,8 +170,8 @@ class microDbalTest extends TestCase
         $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after rollBack.');
 
         // Verify the row was not committed
-        $result = $this->db->get('SELECT * FROM "temp_table" WHERE "name" = ?', ["Charlie"]);
-        $this->assertFalse($result, 'Expected no row to be found after rollback.');
+        $result = $this->db->getRow('SELECT * FROM "temp_table" WHERE "name" = ?', ["Charlie"]);
+        $this->assertCount(0, $result, 'Expected no row to be found after rollback.');
 
         // Begin another transaction
         $this->db->beginTransaction();
@@ -199,17 +185,14 @@ class microDbalTest extends TestCase
         $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after commit.');
 
         // Verify the row was committed
-        $result = $this->db->get('SELECT * FROM "temp_table" WHERE "name" = ?', ["Diana"]);
+        $result = $this->db->getRow('SELECT * FROM "temp_table" WHERE "name" = ?', ["Diana"]);
         $this->assertArrayIsEqualToArrayIgnoringListOfKeys(['name' => 'Diana', 'age' => 28], $result, ['id'], 'Expected the row to be found after commit.');
     }
-
-
 
     public function testGetRowCount(): void
     {
         // Insert 1 row and check row count
-        $this->db->run('INSERT INTO "temp_table" ("name", "age") VALUES (?, ?)', ['Charlie', 25]);
-        $rowCount = $this->db->getRowCount();
+        $this->db->run('INSERT INTO "temp_table" ("name", "age") VALUES (?, ?)', ['Charlie', 25], $rowCount);
         $this->assertEquals(1, $rowCount, 'Expected row count to be 1 after a single insert.');
     }
 
