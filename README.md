@@ -31,6 +31,9 @@ composer require a-le/microdbal
 
 ### 1. Connect to the Database
 ```php
+require __DIR__ . '/vendor/autoload.php';
+use aLe\MicroDbal;
+
 // Constructor signature: __construct(string $dsn, ?string $username = null, ?string $password = null)
 $db = new MicroDbal('sqlite::memory:');
 ```
@@ -212,10 +215,9 @@ $peopleAbove18 = $db->getAllObjects('SELECT * FROM test where age > ?', [18], Pe
 ### 12. SQL `IN` Helper
 ```php
 // Method signature: sqlIn(array $values): string
-$untrusted = [1, 2, 3];
-$sqlFragment = $db->sqlIn($$untrusted);
-$result = $db->getAll('SELECT * FROM test WHERE id IN ' . $sqlFragment, $params);
-print_r($result);
+$arr = [1, 2, 3];
+$sqlFragment = $db->sqlIn($arr);
+$result = $db->getAll('SELECT * FROM test WHERE id IN ' . $sqlFragment, $arr);
 ```
 
 ---
@@ -223,10 +225,9 @@ print_r($result);
 ### 13. SQL `LIKE` Helper
 ```php
 // Method signature: sqlLike(string $value, string $escapeChar = '\\'): string
-$untrusted = 'A';
-$likeClause = $db->sqlLike($untrusted).'%';
-$result = $db->getAll('SELECT * FROM test WHERE name LIKE ' . $likeClause);
-print_r($result);
+$s = 'P';
+$arg = $db->sqlLike($s). '%';
+$result = $db->getAll('SELECT * FROM test WHERE name LIKE ?', [$arg]);
 ```
 
 ---
@@ -273,9 +274,9 @@ For more information about the rationale behind this approach, see: [PHP Delusio
 
 ## Running Tests
 To run tests using PHPUnit:
-1. Install with composer:
+1. Clone the repository with composer :
    ```bash
-
+   composer install a-le/microdbal
    ```
 
 2. Run tests on SQLite (default to memory DB if no DSN provided) :
