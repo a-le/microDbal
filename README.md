@@ -11,6 +11,8 @@ For advanced use cases not covered by the library, the underlying PDO instance r
 - ✅ Run query with prepared statements and get results in only 1 step
 - ✅ Get results as arrays or objects
 
+💬 If you like microDbal, leave a ⭐ on GitHub — it really helps!
+
 ## Tested with those Databases
 - ✅ Firebird
 - ✅ MySQL / MariaDB
@@ -271,7 +273,6 @@ For more information about the rationale behind this approach, see: [PHP Delusio
   - SQL written directly in your code is always more readable and expressive than generating it with PHP code, provided you are familiar with SQL.
   - You are limited to common SQL functionalities.
 
-
 ## Running Tests
 To run tests using PHPUnit:
 1. Clone the repository with composer :
@@ -295,12 +296,16 @@ To run tests using PHPUnit:
    ```
 
 ## Status
-The API is currently under development and subject to changes. 
-Backward compatibility is not guaranteed until a stable version is released.
+First stable version just released (april, 2025).
 
-## Contributing
-Contributions are welcome! Feel free to open issues or submit pull requests.
-This library is intended to be super light, as the name suggests.
+## 🤝 Contributing
+
+Contributions are very welcome!  
+Feel free to open an issue for bug reports, feature requests, or questions.
+
+> 🛠️ This library aims to remain **super lightweight and minimal**.  
+> If you'd like to submit a pull request, please open an issue or discussion first to make sure it aligns with the project's goals.
+
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
