@@ -2,7 +2,7 @@
 
 **microDbal** is a minimal PHP database abstraction layer that wraps PDO to give you clean, safe, and simple database access.  
 No ORM. No query builder. No magic.  
-Just SQL in, data out (as array or object).
+Just SQL in, data out (as array or object).  
 For advanced use cases not covered by the library, the underlying PDO instance remains directly accessible.
 
 ## 🚀 Why microDbal?
