@@ -10,7 +10,7 @@ It wraps PDO to give you clean, safe, and simple database access.
 - ✅ Great for prototyping or learning SQL from a PHP-first perspective
 - ✅ Write raw SQL your way – use named (:name) or positional (?) placeholders
 - ✅ Run prepared statements and fetch results in a single step
-- ✅ Built on best practices from PHP Delusions
+- ✅ **Inspired by** the PDO article series from [PHP Delusions](https://phpdelusions.net/)
 
 💬 If you like microDbal, leave a ⭐ on GitHub — it really helps!
 
@@ -32,9 +32,9 @@ Simply drop MicroDbal.php into your project folder and include it manually.
 
 **Note:** SQL must be adapted to your targeted database. The following examples use SQL syntax for **SQLite**.
 
-### 1. Include library with autoload
+### 1. Autoload with composer
 ```php
-// require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php'; // Include the Composer autoloader
 use aLe\MicroDbal;
 ```
 
@@ -223,7 +223,6 @@ $peopleAbove18 = $db->getAllObjects('SELECT * FROM test where age > ?', [18], Pe
 ```
 
 ---
-
 ### 13. SQL `IN` Helper
 ```php
 // Method signature: sqlIn(array $values): string
@@ -233,7 +232,6 @@ $result = $db->getAll('SELECT * FROM test WHERE id IN ' . $sqlFragment, $arr);
 ```
 
 ---
-
 ### 14. SQL `LIKE` Helper
 ```php
 // Method signature: sqlLike(string $value, string $escapeChar = '\\'): string
@@ -241,6 +239,30 @@ $s = 'P';
 $arg = $db->sqlLike($s). '%';
 $result = $db->getAll('SELECT * FROM test WHERE name LIKE ?', [$arg]);
 ```
+---
+
+### 15. Access the PDO Instance
+The underlying PDO instance is exposed as a public property: `$db->pdo`.  
+You can use it directly for uncovered operations or to integrate with other libraries that expect a PDO object.
+
+For example, using [delight-im/PHP-Auth](https://github.com/delight-im/PHP-Auth), which requires a PDO connection:
+
+```php
+$auth = new \Delight\Auth\Auth($db->pdo);
+```
+
+---
+### 16. Access the PDO Statement Object
+
+The `run` method returns a standard PDOStatement object, which you can use as needed — for example, to manually fetch rows one by one:
+
+```php
+$stmt = $db->run('SELECT * FROM test');
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    // Do something with $row
+}
+```
+This gives you full control over result fetching, especially useful for large datasets or custom processing.
 
 ---
 ## FAQ
