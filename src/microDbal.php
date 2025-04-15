@@ -40,7 +40,14 @@ class MicroDbal
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // let PDO throw exception on error
         ];
         $options = array_replace($default_options, $options, $forced_options);
-        $this->pdo = new PDO($dsn, $username, $password, $options);
+
+        try {
+            $this->pdo = new PDO($dsn, $username, $password, $options);
+        } catch (PDOException $e) {
+            // throw a new ErrorException that contains only the message and do not reveal credentials 
+            throw new PDOException('Connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
+        }
+
         $this->driverName = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
@@ -124,10 +131,10 @@ class MicroDbal
      * @return array 
      * @throws PDOException 
      */
-    public function getFirstColumn(string $sql, array $args = []): array
+    public function getCol(string $sql, array $args = []): array
     {
         $stmt = $this->run($sql, $args);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     /**
@@ -274,7 +281,7 @@ class MicroDbal
      * @param string $escape The escape character (default is '\').
      * @return string The escaped string ready for a LIKE clause.
      */
-    public function sqlLikeEscape(string $str, string $escape = '\\'): string
+    public function sqlLike(string $str, string $escape = '\\'): string
     {
         // Escape special characters for SQL LIKE
         $escaped = strtr($str, [

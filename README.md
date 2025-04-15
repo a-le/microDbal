@@ -1,35 +1,23 @@
-# MicroDbal Library
+# microDbal
 
-MicroDbal is a lightweight database abstraction library built on top of PHP's PDO.
+**microDbal** is a minimal PHP database abstraction layer that wraps PDO to give you clean, safe, and simple database access.  
+No ORM. No query builder. No magic.  
+Just SQL in, arrays out.
+For advanced use cases not covered by the library, the underlying PDO instance remains directly accessible.
 
-Ease of use:
-- Focuses on the most commonly used PDOStatement fetch modes.
-- Regroups most common PDO and PDOStatement methods into the same class.
+## 🚀 Why microDbal?
 
-Safe:
-- Uses prepared statements to prevent SQL injection and follows the best practices outlined at [PHP Delusions](https://phpdelusions.net/pdo).
-
-Powerful:
-- For advanced use cases not covered by the library, the underlying PDO and PDOStatement instances remain directly accessible.
-
-Light:
-- Does not include ORM or query-building functionalities.
-
-
-## Features
-- Can run a SQL query and get the result with only 1 line of code
-- SQL query can uses named placeholders (:name) or positional placeholders (?)
-- Helper methods for SQL `IN` clauses and `LIKE` clauses
-- Let use the underlying PDO and PDOStatement instances directly if ever needed
+- ✅ Write raw SQL the way you want with named placeholders (:name) or positional placeholders (?)
+- ✅ Run query with prepared statements and get results in only 1 step
+- ✅ Get results as arrays or objects
 
 ## Tested with those Databases
-- [ ] DuckDB
-- [x] Firebird
-- [x] MySQL / MariaDB
-- [x] MS SQL Server
-- [x] PostgreSQL
-- [x] SQLite
-- [x] supports all databases that are compatible with PHP's PDO.
+- ✅ Firebird
+- ✅ MySQL / MariaDB
+- ✅ MS SQL Server
+- ✅ PostgreSQL
+- ✅ SQLite
+- ✅ should support any database that is compatible with PHP's PDO.
 
 ## Installation
 Install via Composer:
@@ -38,78 +26,249 @@ composer require aLe/microdbal
 ```
 
 ## Usage
-Here’s a list of all methods provided by the `MicroDbal` class, along with examples :
 
-- `__construct(string $dsn, ?string $username = null, ?string $password = null, array $options = [])`  
-  **Example:**
-  ```php
-  $db = new MicroDbal('sqlite::memory:');
-  ```
+**Note:** SQL must be adapted to your targeted database. The following examples use SQL syntax for **SQLite**.
 
-- `run(string $sql, array $args = []): PDOStatement|false`  
-  **Example:**
-  ```php
-  $db->run('INSERT INTO users (name, age) VALUES (:name, :age)', ['name' => 'Alice', 'age' => 30]); // with named placeholders
-  $db->run('INSERT INTO users (name, age) VALUES (?, ?)', ['Alice', 30]); // same query with positional placeholders
-  $db->run('INSERT INTO users (name, age) VALUES (?, ?)', ['Alice', 30], $rowCount); // pass a 3rd argument to get affected rows
-  ```
+### 1. Connect to the Database
+```php
+// Constructor signature: __construct(string $dsn, ?string $username = null, ?string $password = null)
+$db = new MicroDbal('sqlite::memory:');
+```
 
-- `getAll(string $sql, array $args = []): array`  
-  **Example:**
-  ```php
-  $users = $db->getAll('SELECT * FROM users WHERE age > :age', ['age' => 18]);
-  ```
+---
 
-- `getRow(string $sql, array $args = []): array`  
-  **Example:**
-  ```php
-  $user = $db->getRow('SELECT * FROM users WHERE id = :id', ['id' => 1]);
-  ```
+### 2. Run Queries
+```php
+// Method signature: run(string $sql, array $args = [], ?int &$affectedRows = null): PDOStatement
+$db->run('CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, age INTEGER)');
+$db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['Pauline', 25]); // question mark placeholder
+$db->run('INSERT INTO test (name, age) VALUES (:name, :age)', ['name' => 'Ryan', 'age' => 15]); // named placeholder
+```
 
-- `getFirstColumn(string $sql, array $args = []): array`  
-  **Example:**
-  ```php
-  $names = $db->getFirstColumn('SELECT id FROM users WHERE age > :age', ['age' => 18]);
-  ```
+---
 
-- `getOne(string $sql, array $args = []): mixed`  
-  **Example:**
-  ```php
-  $age = $db->getOne(sql: 'SELECT age FROM users WHERE id = :id', ['id' => 1]);
-  ```
+### 3. Get All Rows
+```php
+// Method signature: getAll(string $sql, array $args = [], ?array &$columnsMeta = null): array
+$rows = $db->getAll('SELECT * FROM test WHERE age > ?', [10]);
+print_r($rows);
+```
+**Output:**
+```php
+Array
+(
+    [0] => Array
+        (
+            [id] => 1
+            [name] => Pauline
+            [age] => 25
+        ),
+    [1] => Array
+        (
+            [id] => 2
+            [name] => Ryan
+            [age] => 15
+        )
+)
+```
 
-- `getOneObject(string $sql, array $args = [], string $className, array $constructorArgs = []): mixed`  
-  **Example:**
-  ```php
-  $user = $db->getOneObject(sql: 'SELECT * FROM users WHERE id = :id', User::class, ['id' => 1]);
-  ```
+---
 
-- `getAllObjects(string $sql, array $args = [], string $className, array $constructorArgs = []): array`  
-  **Example:**
-  ```php
-  $users = $db->getAllObjects(sql: 'SELECT * FROM users WHERE age > :age', className: User::class, ['age' => 18]);
-  ```
+### 4. Get a Single Row
+```php
+// Method signature: getRow(string $sql, array $args = [], ?array &$columnsMeta = null): array
+$row = $db->getRow('SELECT * FROM test WHERE id = ?', [1]);
+print_r($row);
+```
+**Output:**
+```php
+Array
+(
+    [id] => 1
+    [name] => Pauline
+    [age] => 25
+)
+```
 
-- `getLastInsertedId(?string $name = null): string|false`  
-- `beginTrans(): bool`  
-- `commitTrans(): bool`  
-- `rollBackTrans(): bool`  
-- `inTrans(): bool`  
+---
 
-- `sqlIn(array $arr): string`  
-  **Example:**
-  ```php
-  $ids = [1, 2, 3];
-  $sqlFragment = $db->sqlIn($ids); // $sqlFragment will be '(?,?,?)';
-  $users = $db->getAll("SELECT * FROM users WHERE id IN $sqlFragment", $ids);
-  ```
+### 5. Get a Single Column
+```php
+// Method signature: getCol(string $sql, array $args = []): array
+$col = $db->getCol('SELECT id FROM test WHERE age >= ?', [10]);
+print_r($col);
+```
+**Output:**
+```php
+Array
+(
+    [0] => 1,
+    [1] => 2,
+)
+```
 
-- `sqlLikeEscape(string $str, string $escape = '\\'): string`  
-  **Example:**
-  ```php
-  $search = $db->sqlLikeEscape('A', '\\').'%';
-  $users = $db->getAll("SELECT * FROM users WHERE name LIKE ? ESCAPE '\\'", [$search]);
-  ```
+---
+
+### 6. Get a Single Value
+```php
+// Method signature: getOne(string $sql, array $args = []): mixed
+$cnt = $db->getOne('SELECT COUNT(*) FROM test WHERE age < ?', [18]);
+print_r($cnt);
+```
+**Output:**
+```php
+1
+```
+
+---
+
+### 7. Get Affected Rows
+```php
+$db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['Marty', 65], $affectedRows);
+print_r($affectedRows);
+```
+**Output:**
+```php
+1
+```
+
+---
+
+### 8. Get Last Inserted ID
+```php
+print_r($db->getLastInsertedId());
+```
+**Output:**
+```php
+3
+```
+
+---
+
+### 9. Get Column Metadata
+```php
+$db->getAll('SELECT * FROM test WHERE false', [], $columnsMeta);
+print_r($columnsMeta);
+```
+**Output:**
+```php
+Array
+(
+    [0] => Array
+        (
+            [name] => id
+            (...)
+        )
+    [1] => Array
+        (
+            [name] => name
+            (...)
+        )
+    [2] => Array
+        (
+            [name] => age
+            (...)
+        )
+)
+```
+
+---
+
+### 10. Transactions
+```php
+$db->beginTransaction();
+$db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['John', 30]);
+$db->commit();
+
+$db->beginTransaction();
+$db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['Jane', 40]);
+$db->rollBack();
+
+if ($db->inTransaction()) {
+    echo "Transaction is active.";
+}
+```
+
+---
+
+### 11. Fetch Objects
+```php
+class Person
+{
+    public int $id;
+    public string $name;
+    public int $age;
+}
+
+// Method signature: getOneObject(string $sql, array $args = [], string $className): ?object
+$person = $db->getOneObject('SELECT * FROM test WHERE id = ?', [1], Person::class);
+
+// Method signature: getAllObjects(string $sql, array $args = [], string $className): array
+$peopleAbove18 = $db->getAllObjects('SELECT * FROM test where age > ?', [18], Person::class);
+```
+
+---
+
+### 12. SQL `IN` Helper
+```php
+// Method signature: sqlIn(array $values): string
+$untrusted = [1, 2, 3];
+$sqlFragment = $db->sqlIn($$untrusted);
+$result = $db->getAll('SELECT * FROM test WHERE id IN ' . $sqlFragment, $params);
+print_r($result);
+```
+
+---
+
+### 13. SQL `LIKE` Helper
+```php
+// Method signature: sqlLike(string $value, string $escapeChar = '\\'): string
+$untrusted = 'A';
+$likeClause = $db->sqlLike($untrusted).'%';
+$result = $db->getAll('SELECT * FROM test WHERE name LIKE ' . $likeClause);
+print_r($result);
+```
+
+---
+## FAQ
+
+### What happens if there is an error?
+- This library enforces `PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION`, which ensures that PDO will throw an exception (`PDOException`) whenever an error occurs.
+- These exceptions can be handled like any other PHP error using `try...catch` blocks.
+
+#### Common setups for dealing with PHP errors:
+- **Development Environment:**
+  - Display errors for debugging purposes.
+  - Example configuration in `php.ini`:
+    ```ini
+    error_reporting = E_ALL
+    display_errors = On
+    ```
+
+- **Production Environment:**
+  - Log errors instead of displaying them to the user.
+  - Example configuration in `php.ini`:
+    ```ini
+    error_reporting = E_ALL
+    display_errors = Off
+    log_errors = On
+    error_log = /path/to/error.log
+     ```
+
+With these configurations:
+- In development, errors will be displayed to help with debugging.
+- In production, errors will be logged to a file to avoid exposing sensitive information to users.
+
+If you need to recover from an error, you can use a `try...catch` block to handle the exception and continue the script's execution.
+
+For more information about the rationale behind this approach, see: [PHP Delusions - Try Catch](https://phpdelusions.net/delusion/try-catch)
+
+---
+### Isn't it better to use a query builder than writing SQL by hand ?
+- If your code targets multiple databases, the answer is yes ! Query builders helps abstract database-specific differences and make your code more portable.
+- However, in other cases, consider the tradeoffs :
+  - SQL written directly in your code is always more readable and expressive than generating it with PHP code, provided you are familiar with SQL.
+  - You are limited to common SQL functionalities.
 
 
 ## Running Tests

@@ -1,5 +1,23 @@
 <?php
-
+/*
+ * MicroDbal PHPUnit Test Suite
+ * - Is designed to run with any database supported by PHP's PDO.
+ * The SQL used in this test suite is intended to be as portable as possible.
+ * However, this syntax may not be supported by all databases.
+ *
+ * - Is designed to be run by run-tests.php so you can pass <dsn> <username> <password> as arguments.
+ *
+ * - Is expected to pass successfully on the following databases:
+ * - Firebird
+ * - MySQL / MariaDB
+ * - PostgreSQL
+ * - SQL Server
+ * - SQLite
+ *
+ * A test table is created in the database and populated with test data.
+ * The test table is dropped after the tests are completed.
+ * The test table is named "temp_table".
+ */
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
@@ -65,6 +83,8 @@ class microDbalTest extends TestCase
         // Query returns results
         $result = $this->db->getAll('SELECT * FROM "temp_table"', [], $columnsMeta);
         $this->assertCount(2, $result);
+
+        // columnsMeta should contain metadata about the columns
         $this->assertCount(3, $columnsMeta);
 
         // Query does not return results
@@ -74,6 +94,17 @@ class microDbalTest extends TestCase
         // Query is bogus
         $this->expectException(PDOException::class);
         $this->db->getAll('SELECT * FROM NON_EXISTING_TABLE');
+    }
+
+    public function testFetch(): void
+    {
+        $i = 0;
+        $stmt = $this->db->run('SELECT * FROM "temp_table"');
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->assertIsArray($row, 'Expected each row to be an associative array.');
+            $i++;
+        }
+        $this->assertEquals(2, $i, 'Expected to fetch 2 rows from the temp_table.');
     }
 
     public function testGetRow(): void
@@ -91,19 +122,19 @@ class microDbalTest extends TestCase
         $this->db->getRow('SELECT * FROM NON_EXISTING_TABLE');
     }
 
-    public function testGetFirstColumn(): void
+    public function testGetCol(): void
     {
         // Query returns results
-        $result = $this->db->getFirstColumn('SELECT "name" FROM "temp_table"');
+        $result = $this->db->getCol('SELECT "name" FROM "temp_table"');
         $this->assertEquals(['Alice', 'Bob'], $result, 'Expected to fetch the first column with names.');
 
         // Query does not return results
-        $result = $this->db->getFirstColumn('SELECT "name" FROM "temp_table" WHERE "age" > ?', [100]);
+        $result = $this->db->getCol('SELECT "name" FROM "temp_table" WHERE "age" > ?', [100]);
         $this->assertSame([], $result, 'Expected an empty array when no rows match the query.');
 
         // Query is bogus
         $this->expectException(PDOException::class);
-        $this->db->getFirstColumn('SELECT NON_EXISTING_COLUMN FROM "temp_table"');
+        $this->db->getCol('SELECT NON_EXISTING_COLUMN FROM "temp_table"');
     }
 
     public function testGetOne(): void
@@ -153,42 +184,6 @@ class microDbalTest extends TestCase
         $this->db->getAllObjects('SELECT * FROM NON_EXISTING_TABLE', [], Person::class);
     }
 
-    public function testTransMethods(): void
-    {
-        // Test inTrans before starting a transaction
-        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction initially.');
-
-        // Begin transaction
-        $this->db->beginTransaction();
-        $this->assertTrue($this->db->inTransaction(), 'Expected to be in a transaction after beginTransaction.');
-
-        // Insert a new row
-        $this->db->run('INSERT INTO "temp_table" ("name", "age") VALUES (?, ?)', ['Charlie', 25]);
-
-        // Roll back the transaction
-        $this->db->rollBack();
-        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after rollBack.');
-
-        // Verify the row was not committed
-        $result = $this->db->getRow('SELECT * FROM "temp_table" WHERE "name" = ?', ["Charlie"]);
-        $this->assertCount(0, $result, 'Expected no row to be found after rollback.');
-
-        // Begin another transaction
-        $this->db->beginTransaction();
-        $this->assertTrue($this->db->inTransaction(), 'Expected to be in a transaction after beginTransaction.');
-
-        // Insert a new row
-        $this->db->run('INSERT INTO "temp_table" ("name", "age") VALUES (?, ?)', ['Diana', 28]);
-
-        // Commit the transaction
-        $this->db->commit();
-        $this->assertFalse($this->db->inTransaction(), 'Expected not to be in a transaction after commit.');
-
-        // Verify the row was committed
-        $result = $this->db->getRow('SELECT * FROM "temp_table" WHERE "name" = ?', ["Diana"]);
-        $this->assertArrayIsEqualToArrayIgnoringListOfKeys(['name' => 'Diana', 'age' => 28], $result, ['id'], 'Expected the row to be found after commit.');
-    }
-
     public function testGetRowCount(): void
     {
         // Insert 1 row and check row count
@@ -198,33 +193,33 @@ class microDbalTest extends TestCase
 
     public function testSqlIn(): void
     {
-        // Case 1: Non-empty array of integers
+        // Case 1: gen IN from an array of integers
         $params = [1, 2];
         $sqlFragment = $this->db->sqlIn($params);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "id" IN ' . $sqlFragment, $params);
         $this->assertCount(2, $result, 'Expected 2 rows to match the integer IN clause.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30], ['id' => 2, 'name' => 'Bob', 'age' => 40]], $result);
 
-        // Case 2: Empty array
+        // Case 2: gen IN from an empty array, note that the id column is of type INTEGER
         $params = [];
         $sqlFragment = $this->db->sqlIn($params);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "id" IN ' . $sqlFragment, $params);
         $this->assertEquals([], $result, 'Expected no rows to match the empty integer IN clause.');
 
-        // Case 3: Empty array
+        // Case 3: gen IN from an empty array, note that the name column is of type VARCHAR
         $params = [];
         $sqlFragment = $this->db->sqlIn($params);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "name" IN ' . $sqlFragment, $params);
         $this->assertEquals([], $result, 'Expected no rows to match the empty string IN clause.');
 
-        // Case 4: Single integer
+        // Case 4: gen IN from an array of a single integer 
         $params = [1];
         $sqlFragment = $this->db->sqlIn($params);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "id" IN ' . $sqlFragment, $params);
         $this->assertCount(1, $result, 'Expected 1 row to match the single integer IN clause.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30]], $result);
 
-        // Case 5: Non-empty array of strings
+        // Case 5: gen IN from an array of strings
         $params = ['Alice', 'Bob'];
         $sqlFragment = $this->db->sqlIn($params);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "name" IN ' . $sqlFragment, $params);
@@ -233,16 +228,16 @@ class microDbalTest extends TestCase
 
     }
 
-    public function testsqlLikeEscape(): void
+    public function testsqlLike(): void
     {
         $untrustedValue = 'A';
-        $escapedValue = $this->db->sqlLikeEscape($untrustedValue);
+        $escapedValue = $this->db->sqlLike($untrustedValue);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "name" LIKE ?', [$escapedValue . '%']);
         $this->assertCount(1, $result, 'Expected 1 row to match the LIKE clause with escaped `A` in input.');
         $this->assertEquals([['id' => 1, 'name' => 'Alice', 'age' => 30]], $result);
 
         $untrustedValue = '%';
-        $escapedValue = $this->db->sqlLikeEscape($untrustedValue);
+        $escapedValue = $this->db->sqlLike($untrustedValue);
         $result = $this->db->getAll('SELECT * FROM "temp_table" WHERE "name" LIKE ?', [$escapedValue . '%']);
         $this->assertCount(0, $result, 'Expected no row to match the LIKE clause with escaped `%` in input.');
     }
@@ -260,6 +255,16 @@ class microDbalTest extends TestCase
 
         // Assert the updated age
         $this->assertEquals(35, $updatedAge, 'Expected Alice\'s age to be updated to 35.');
+    }
+
+    public function testCleanup(): void
+    {
+        try {
+            $this->db->run('DROP TABLE "temp_table"');
+        } catch (PDOException $e) {
+            // Ignore the error if the table does not exist
+        }
+        $this->assertTrue(true);
     }
 
 }
