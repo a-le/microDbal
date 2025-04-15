@@ -22,7 +22,7 @@ For advanced use cases not covered by the library, the underlying PDO instance r
 ## Installation
 Install via Composer:
 ```bash
-composer require aLe/microdbal
+composer require a-le/microdbal
 ```
 
 ## Usage
