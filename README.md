@@ -1,48 +1,58 @@
 # microDbal
 
-**microDbal** is a minimal PHP database abstraction layer that wraps PDO to give you clean, safe, and simple database access.  
-No ORM. No query builder. No magic.  
-Just SQL in, data out (as array or object).  
-For advanced use cases not covered by the library, the underlying PDO instance remains directly accessible.
+**microDbal** is a minimal PHP database abstraction layer.  
+It wraps PDO to give you clean, safe, and simple database access.  
 
 ## 🚀 Why microDbal?
 
-- ✅ Write raw SQL the way you want with named placeholders (:name) or positional placeholders (?)
-- ✅ Run query with prepared statements and get results in only 1 step
-- ✅ Get results as arrays or objects
+- ✅ Micro by design – no ORM, no query builder, no dependencies, no annotations
+- ✅ Just SQL in, data out – fetch results as arrays or objects
+- ✅ Great for prototyping or learning SQL from a PHP-first perspective
+- ✅ Write raw SQL your way – use named (:name) or positional (?) placeholders
+- ✅ Run prepared statements and fetch results in a single step
+- ✅ Built on best practices from PHP Delusions
 
 💬 If you like microDbal, leave a ⭐ on GitHub — it really helps!
 
 ## Tested with those Databases
-- ✅ Firebird
-- ✅ MySQL / MariaDB
-- ✅ MS SQL Server
-- ✅ PostgreSQL
-- ✅ SQLite
-- ✅ should support any database that is compatible with PHP's PDO.
+Firebird, MySQL / MariaDB, MS SQL Server, PostgreSQL, SQLite.  
+Should support any database that is compatible with PHP's PDO.
 
 ## Installation
 Install via Composer:
 ```bash
 composer require a-le/microdbal
 ```
+Or alternatively:  
+Simply drop MicroDbal.php into your project folder and include it manually.
+
+
 
 ## Usage
 
 **Note:** SQL must be adapted to your targeted database. The following examples use SQL syntax for **SQLite**.
 
-### 1. Connect to the Database
+### 1. Include library with autoload
 ```php
-require __DIR__ . '/vendor/autoload.php';
+// require __DIR__ . '/vendor/autoload.php';
 use aLe\MicroDbal;
+```
 
+#### Or alternatively:
+```php
+require 'microdbal.php';
+use aLe\MicroDbal;
+```
+
+### 2. Connect to the Database
+```php
 // Constructor signature: __construct(string $dsn, ?string $username = null, ?string $password = null)
 $db = new MicroDbal('sqlite::memory:');
 ```
 
 ---
 
-### 2. Run Queries
+### 3. Run Queries
 ```php
 // Method signature: run(string $sql, array $args = [], ?int &$affectedRows = null): PDOStatement
 $db->run('CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, age INTEGER)');
@@ -52,7 +62,7 @@ $db->run('INSERT INTO test (name, age) VALUES (:name, :age)', ['name' => 'Ryan',
 
 ---
 
-### 3. Get All Rows
+### 4. Get All Rows
 ```php
 // Method signature: getAll(string $sql, array $args = [], ?array &$columnsMeta = null): array
 $rows = $db->getAll('SELECT * FROM test WHERE age > ?', [10]);
@@ -79,7 +89,7 @@ Array
 
 ---
 
-### 4. Get a Single Row
+### 5. Get a Single Row
 ```php
 // Method signature: getRow(string $sql, array $args = [], ?array &$columnsMeta = null): array
 $row = $db->getRow('SELECT * FROM test WHERE id = ?', [1]);
@@ -97,7 +107,7 @@ Array
 
 ---
 
-### 5. Get a Single Column
+### 6. Get a Single Column
 ```php
 // Method signature: getCol(string $sql, array $args = []): array
 $col = $db->getCol('SELECT id FROM test WHERE age >= ?', [10]);
@@ -114,7 +124,7 @@ Array
 
 ---
 
-### 6. Get a Single Value
+### 7. Get a Single Value
 ```php
 // Method signature: getOne(string $sql, array $args = []): mixed
 $cnt = $db->getOne('SELECT COUNT(*) FROM test WHERE age < ?', [18]);
@@ -127,7 +137,7 @@ print_r($cnt);
 
 ---
 
-### 7. Get Affected Rows
+### 8. Get Affected Rows
 ```php
 $db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['Marty', 65], $affectedRows);
 print_r($affectedRows);
@@ -139,7 +149,7 @@ print_r($affectedRows);
 
 ---
 
-### 8. Get Last Inserted ID
+### 9. Get Last Inserted ID
 ```php
 print_r($db->getLastInsertedId());
 ```
@@ -150,7 +160,7 @@ print_r($db->getLastInsertedId());
 
 ---
 
-### 9. Get Column Metadata
+### 10. Get Column Metadata
 ```php
 $db->getAll('SELECT * FROM test WHERE false', [], $columnsMeta);
 print_r($columnsMeta);
@@ -179,7 +189,7 @@ Array
 
 ---
 
-### 10. Transactions
+### 11. Transactions
 ```php
 $db->beginTransaction();
 $db->run('INSERT INTO test (name, age) VALUES (?, ?)', ['John', 30]);
@@ -196,7 +206,7 @@ if ($db->inTransaction()) {
 
 ---
 
-### 11. Fetch Objects
+### 12. Fetch Objects
 ```php
 class Person
 {
@@ -214,7 +224,7 @@ $peopleAbove18 = $db->getAllObjects('SELECT * FROM test where age > ?', [18], Pe
 
 ---
 
-### 12. SQL `IN` Helper
+### 13. SQL `IN` Helper
 ```php
 // Method signature: sqlIn(array $values): string
 $arr = [1, 2, 3];
@@ -224,7 +234,7 @@ $result = $db->getAll('SELECT * FROM test WHERE id IN ' . $sqlFragment, $arr);
 
 ---
 
-### 13. SQL `LIKE` Helper
+### 14. SQL `LIKE` Helper
 ```php
 // Method signature: sqlLike(string $value, string $escapeChar = '\\'): string
 $s = 'P';
@@ -267,11 +277,6 @@ If you need to recover from an error, you can use a `try...catch` block to handl
 For more information about the rationale behind this approach, see: [PHP Delusions - Try Catch](https://phpdelusions.net/delusion/try-catch)
 
 ---
-### Isn't it better to use a query builder than writing SQL by hand ?
-- If your code targets multiple databases, the answer is yes ! Query builders helps abstract database-specific differences and make your code more portable.
-- However, in other cases, consider the tradeoffs :
-  - SQL written directly in your code is always more readable and expressive than generating it with PHP code, provided you are familiar with SQL.
-  - You are limited to common SQL functionalities.
 
 ## Running Tests
 To run tests using PHPUnit:
@@ -303,7 +308,7 @@ First stable version just released (april, 2025).
 Contributions are very welcome!  
 Feel free to open an issue for bug reports, feature requests, or questions.
 
-> 🛠️ This library aims to remain **super lightweight and minimal**.  
+> 🛠️ This library aims to remain **micro**.  
 > If you'd like to submit a pull request, please open an issue or discussion first to make sure it aligns with the project's goals.
 
 
