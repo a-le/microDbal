@@ -273,9 +273,9 @@ For more information about the rationale behind this approach, see: [PHP Delusio
 
 ## Running Tests
 To run tests using PHPUnit:
-1. Install dependencies:
+1. Install with composer:
    ```bash
-   composer install
+
    ```
 
 2. Run tests on SQLite (default to memory DB if no DSN provided) :
